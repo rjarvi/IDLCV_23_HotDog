@@ -106,3 +106,19 @@ print(f'Loaded {len(testset)} test images')
 # Example of loading a batch of images from the training set
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
+
+def check_data_structure(data_path):
+    for root, dirs, files in os.walk(data_path):
+        # Print current directory path
+        print(f"Directory: {root}")
+        
+        # Print subdirectories
+        for subdir in dirs:
+            print(f"  Subdirectory: {subdir}")
+        
+        # Print files
+        for file in files:
+            print(f"  File: {file}")
+
+# Call the function to check the structure
+check_data_structure(data_path)
