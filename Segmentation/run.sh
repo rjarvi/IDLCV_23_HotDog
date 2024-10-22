@@ -22,7 +22,14 @@
 #BSUB -o output_file1.out
 #BSUB -e output_error.err
 
-##BSUB -u s203279@dtu.dk
+##BSUB -u <dtu email>
 
-source "$PYTHON_ENVIRONMENT"
+
+if [ -n "$PYTHON_ENVIRONMENT" ]; then
+    if ! source "$PYTHON_ENVIRONMENT"; then
+        echo "Failed to source the Python environment: $PYTHON_ENVIRONMENT"
+        exit 1
+    fi
+fi
+
 python "$PYTHON_FILE" > output.log
