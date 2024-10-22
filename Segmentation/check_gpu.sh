@@ -4,12 +4,12 @@
 ### -- set the job Name -- 
 #BSUB -J My_Application
 ### Number of cores
-#BSUB -n 4
+#BSUB -n 1
 ### Number of hosts
 #BSUB -R "span[hosts=1]"
 ### Memory requirements
-#BSUB -R "rusage[mem=10GB]"
-#BSUB -M 10GB
+#BSUB -R "rusage[mem=1GB]"
+#BSUB -M 1GB
 
 
 ### how many gpus
@@ -24,5 +24,3 @@
 
 ##BSUB -u s203279@dtu.dk
 
-source "$PYTHON_ENVIRONMENT"
-python "$PYTHON_FILE" > output.log
