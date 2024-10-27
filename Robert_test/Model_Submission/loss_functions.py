@@ -2,6 +2,8 @@ import torch
 import torchvision.transforms as TF
 import torch.nn.functional as F
 
+from torchmetrics import Dice, JaccardIndex, Accuracy, Recall, Specificity
+
 #  Dice overlap, Intersection overUnion, Accuracy, Sensitivity, and Specifici
 
 def bce_loss(y_real, y_pred):
@@ -84,3 +86,83 @@ def evaluate_model_with_metric(model, device, test_loader, metric_fn):
     #print(f'Final Model Performance - Average Metric: {avg_metric:.4f}')
     
     return avg_metric
+
+
+
+def calculate_segmentation_metrics(y_true,y_pred, device):
+    y_pred = (y_pred > 0.5).long()  # Convert probabilities to binary
+    y_true = y_true.long() 
+
+    #dice_score2=Dice(y_pred, y_true)
+    dice_func = Dice().to(device)
+    dice_score  = dice_func(y_pred,y_true)
+    iou_func = JaccardIndex(task="binary").to(device)
+    iou_score = iou_func(y_pred,y_true)
+    accuracy_func = Accuracy(task="binary").to(device)
+    accuracy_score = accuracy_func(y_pred,y_true)
+    recall_func = Recall(task="binary").to(device)
+    sensitivity_score=recall_func(y_pred,y_true)
+    specificity_func = Specificity(task="binary").to(device)
+    specificity_score=specificity_func(y_pred,y_true)
+    print (dice_score)
+    print(iou_score)
+    print(accuracy_score)
+    print(sensitivity_score)
+    print(specificity_score)
+    metrics = {
+            'Dice': dice_score,
+            'IoU': iou_score,
+            'Accuracy': accuracy_score,
+            'Sensitivity': sensitivity_score,
+            'Specificity': specificity_score
+        }
+    return metrics
+
+
+def evaluate_model(model, dataloader, device):
+    # Put model in evaluation mode
+    model.eval()
+    
+    # Initialize lists to store metrics for each batch
+    dice_scores = []
+    iou_scores = []
+    accuracy_scores = []
+    sensitivity_scores = []
+    specificity_scores = []
+    
+    # Disable gradient computation for evaluation
+    with torch.no_grad():
+        for batch in dataloader:
+            # Assuming each batch has images and masks
+            images, masks = batch
+            images, masks = images.to(device), masks.to(device)
+            
+            # Forward pass to get predictions
+            outputs = model(images)
+            
+            # Convert outputs to probabilities if necessary
+            y_pred = torch.sigmoid(outputs)  # Assuming binary segmentation
+            
+            # Calculate metrics for this batch
+            metrics = calculate_segmentation_metrics(masks, y_pred, device)
+            
+            # Append each metric
+            dice_scores.append(metrics['Dice'].item())
+            iou_scores.append(metrics['IoU'].item())
+            accuracy_scores.append(metrics['Accuracy'].item())
+            sensitivity_scores.append(metrics['Sensitivity'].item())
+            specificity_scores.append(metrics['Specificity'].item())
+    
+    # Compute average for each metric
+    avg_metrics = {
+        'Dice': sum(dice_scores) / len(dice_scores),
+        'IoU': sum(iou_scores) / len(iou_scores),
+        'Accuracy': sum(accuracy_scores) / len(accuracy_scores),
+        'Sensitivity': sum(sensitivity_scores) / len(sensitivity_scores),
+        'Specificity': sum(specificity_scores) / len(specificity_scores)
+    }
+    
+    return avg_metrics
+
+
+#loss function for abalation study

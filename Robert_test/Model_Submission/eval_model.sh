@@ -2,7 +2,7 @@
 # request queue
 #BSUB -q c02516
 ### -- set the job Name -- 
-#BSUB -J RJ_UNET
+#BSUB -J RJ_Eval
 ### Number of cores
 #BSUB -n 4
 ### Number of hosts
@@ -17,9 +17,9 @@
 
 
 ### running time 
-#BSUB -W 1:00
+#BSUB -W 02:00
 
 #BSUB -oo output_file1.out
 #BSUB -eo output_error.err
 
-main.py > output2.out
+eval_model.py > eval_results.out

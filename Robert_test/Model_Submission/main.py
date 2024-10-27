@@ -19,7 +19,8 @@ from IPython.display import clear_output
 from dataloader import SkinLesionLoader
 from model import UNet2
 from training_func import train_with_validation
-from loss_functions import bce_loss, dice_coefficient, intersection_over_union, accuracy, sensitivity, specificity, evaluate_model_with_metric
+from loss_functions import bce_loss, dice_coefficient, intersection_over_union, accuracy, sensitivity, specificity, evaluate_model_with_metric, evaluate_model
+
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -51,13 +52,18 @@ train_with_validation(device, model, optim.Adam(model.parameters()), bce_loss, 2
 
 #do evaluate model performace on loss functios
 
-avg_dice = evaluate_model_with_metric(model, device, test_loader, dice_coefficient)
-print(f'Final Model Performance - Dice Coefficient Metric: {avg_dice:.4f}')
-intersect = evaluate_model_with_metric(model, device, test_loader, intersection_over_union)
-print(f'Final Model Performance - Intersection Over Union Metric: {intersect:.4f}')
-accuracy_ = evaluate_model_with_metric(model, device, test_loader, accuracy)
-print(f'Final Model Performance - Accuracy Metric: {accuracy_:.4f}')
-sensitivity_ = evaluate_model_with_metric(model, device, test_loader, sensitivity)
-print(f'Final Model Performance - Sensitivity Metric: {sensitivity_:.4f}')
-specificity_ = evaluate_model_with_metric(model, device, test_loader, specificity)
-print(f'Final Model Performance - Specificity Metric: {specificity_:.4f}')
+#avg_dice = evaluate_model_with_metric(model, device, test_loader, dice_coefficient)
+# print(f'Final Model Performance - Dice Coefficient Metric: {avg_dice:.4f}')
+# intersect = evaluate_model_with_metric(model, device, test_loader, intersection_over_union)
+# print(f'Final Model Performance - Intersection Over Union Metric: {intersect:.4f}')
+# accuracy_ = evaluate_model_with_metric(model, device, test_loader, accuracy)
+# print(f'Final Model Performance - Accuracy Metric: {accuracy_:.4f}')
+# sensitivity_ = evaluate_model_with_metric(model, device, test_loader, sensitivity)
+# print(f'Final Model Performance - Sensitivity Metric: {sensitivity_:.4f}')
+# specificity_ = evaluate_model_with_metric(model, device, test_loader, specificity)
+# print(f'Final Model Performance - Specificity Metric: {specificity_:.4f}')
+
+print("Final Model Performance")
+metrics = evaluate_model(model, test_loader, device)
+for metric_name, metric_value in metrics.items():
+        print(f"{metric_name}: {metric_value:.4f}")  # Format to 4 decimal places
