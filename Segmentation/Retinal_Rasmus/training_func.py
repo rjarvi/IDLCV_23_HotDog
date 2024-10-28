@@ -8,7 +8,7 @@ def train_with_validation(device, model, opt, loss_fn, epochs, train_loader, val
     best_val_loss = float('inf')
     patience_counter = 0
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', patience=3, factor=0.5, verbose=True)
-
+    model.to(device)
     best_epoch = 0
     best_model = model.state_dict()
     
@@ -24,13 +24,14 @@ def train_with_validation(device, model, opt, loss_fn, epochs, train_loader, val
             mask = dictionary['fov_mask']
             X_batch = X_batch.to(device)
             Y_batch = Y_batch.to(device)
-            mask = mask.to(device)
-
+            mask=mask.to(device)
+            # Y_batch = (Y_batch > 0).float()
             # set parameter gradients to zero
             opt.zero_grad()
 
             # forward
             Y_pred = model(X_batch)
+
             Y_pred = Y_pred * mask
             loss = loss_fn(Y_batch, Y_pred)  # forward-pass
             loss.backward()  # backward-pass

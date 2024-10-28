@@ -2,11 +2,17 @@ import torch
 import torchvision.transforms as TF
 import torch.nn.functional as F
 from torchmetrics.classification import BinaryAccuracy, BinaryJaccardIndex, BinaryRecall, BinarySpecificity, Dice as BinaryDiceCoefficient
+from torchmetrics import Dice, JaccardIndex, Accuracy, Recall, Specificity
 
 #  Dice overlap, Intersection overUnion, Accuracy, Sensitivity, and Specifici
-
 def bce_loss(y_real, y_pred):
     return torch.mean(y_pred - y_real*y_pred + torch.log(1 + torch.exp(-y_pred)))
+
+
+# def bce_loss(y_real, y_pred, pos_weight=1.1):
+#     # Applying the pos_weight to the positive class in the BCE formula
+#     loss = y_pred - y_real * y_pred * pos_weight + torch.log(1 + torch.exp(-y_pred))
+#     return torch.mean(loss)
 
 def dice_coefficient(y_true, y_pred):
     smooth = 1e-6  # To avoid division by zero
@@ -32,6 +38,25 @@ def dice_loss(y_real, y_pred, epsilon=1e-6):
     # Compute Dice loss
     dice_loss = 1. - dice_coeff
     return dice_loss.mean()
+
+# def dice_loss(y_real, y_pred, pos_weight=1.0, epsilon=1e-6):
+#     y_pred = torch.sigmoid(y_pred)
+#     y_real = y_real.float()
+    
+#     # Flatten spatial dimensions (keep batch dimension)
+#     y_real_flat = y_real.view(y_real.size(0), -1)
+#     y_pred_flat = y_pred.view(y_pred.size(0), -1)
+    
+#     # Apply pos_weight to the intersection term
+#     intersection = (y_real_flat * y_pred_flat * pos_weight).sum(dim=1)
+#     union = (y_real_flat * pos_weight).sum(dim=1) + y_pred_flat.sum(dim=1)
+    
+#     # Compute per-sample Dice coefficient
+#     dice_coeff = (2. * intersection + epsilon) / (union + epsilon)
+    
+#     # Compute Dice loss
+#     dice_loss = 1. - dice_coeff
+#     return dice_loss.mean()
 
 def focal_loss(y_real, y_pred, alpha=0.25, gamma=2.0):
     """
@@ -166,3 +191,75 @@ def evaluate_model_with_metric(model, device, test_loader):
 
 
 
+def calculate_segmentation_metrics(y_true,y_pred, device):
+    y_pred = (y_pred > 0.5).long()  # Convert probabilities to binary
+    y_true = y_true.long() 
+    #dice_score2=Dice(y_pred, y_true)
+    dice_func = Dice().to(device)
+    dice_score  = dice_func(y_pred,y_true)
+    iou_func = JaccardIndex(task="binary").to(device)
+    iou_score = iou_func(y_pred,y_true)
+    accuracy_func = Accuracy(task="binary").to(device)
+    accuracy_score = accuracy_func(y_pred,y_true)
+    recall_func = Recall(task="binary").to(device)
+    sensitivity_score=recall_func(y_pred,y_true)
+    specificity_func = Specificity(task="binary").to(device)
+    specificity_score=specificity_func(y_pred,y_true)
+    print (dice_score)
+    print(iou_score)
+    print(accuracy_score)
+    print(sensitivity_score)
+    print(specificity_score)
+    metrics = {
+            'Dice': dice_score,
+            'IoU': iou_score,
+            'Accuracy': accuracy_score,
+            'Sensitivity': sensitivity_score,
+            'Specificity': specificity_score
+        }
+    return metrics
+
+
+def evaluate_model(model, dataloader, device):
+    # Put model in evaluation mode
+    model.eval()
+    
+    # Initialize lists to store metrics for each batch
+    dice_scores = []
+    iou_scores = []
+    accuracy_scores = []
+    sensitivity_scores = []
+    specificity_scores = []
+    
+    # Disable gradient computation for evaluation
+    with torch.no_grad():
+        for dictionary in dataloader:
+            X_batch = dictionary['image'].to(device)
+            Y_batch = dictionary['vessel_mask'].to(device)
+            mask = dictionary['fov_mask'].to(device)
+            # Forward pass to get predictions
+            outputs = model(X_batch)
+            outputs = outputs*mask
+            # Convert outputs to probabilities if necessary
+            y_pred = torch.sigmoid(outputs)  # Assuming binary segmentation
+            
+            # Calculate metrics for this batch
+            metrics = calculate_segmentation_metrics(Y_batch, y_pred, device)
+            
+            # Append each metric
+            dice_scores.append(metrics['Dice'].item())
+            iou_scores.append(metrics['IoU'].item())
+            accuracy_scores.append(metrics['Accuracy'].item())
+            sensitivity_scores.append(metrics['Sensitivity'].item())
+            specificity_scores.append(metrics['Specificity'].item())
+    
+    # Compute average for each metric
+    avg_metrics = {
+        'Dice': sum(dice_scores) / len(dice_scores),
+        'IoU': sum(iou_scores) / len(iou_scores),
+        'Accuracy': sum(accuracy_scores) / len(accuracy_scores),
+        'Sensitivity': sum(sensitivity_scores) / len(sensitivity_scores),
+        'Specificity': sum(specificity_scores) / len(specificity_scores)
+    }
+    
+    return avg_metrics

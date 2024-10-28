@@ -56,11 +56,11 @@ class UNet2(nn.Module):
         def parameters_from_depth(parameters, depth):
             return parameters*2*depth
         
-        par0 = parameters_from_depth(parameters, 1)
-        par1 = parameters_from_depth(parameters, 2)
-        par2 = parameters_from_depth(parameters, 3)
-        par3 = parameters_from_depth(parameters, 4)
-        par4 = parameters_from_depth(parameters, 5)
+        par0 = parameters_from_depth(parameter_count, 1)
+        par1 = parameters_from_depth(parameter_count, 2)
+        par2 = parameters_from_depth(parameter_count, 3)
+        par3 = parameters_from_depth(parameter_count, 4)
+        par4 = parameters_from_depth(parameter_count, 5)
         
         
         # encoder (downsampling)
