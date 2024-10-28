@@ -21,11 +21,13 @@ def train_with_validation(device, model, opt, loss_fn, epochs, train_loader, val
             X_batch = X_batch.to(device)
             Y_batch = Y_batch.to(device)
 
+
             # set parameter gradients to zero
             opt.zero_grad()
 
             # forward
             Y_pred = model(X_batch)
+
             loss = loss_fn(Y_batch, Y_pred)  # forward-pass
             loss.backward()  # backward-pass
             opt.step()  # update weights

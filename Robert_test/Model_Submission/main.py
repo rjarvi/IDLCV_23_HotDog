@@ -17,10 +17,10 @@ from time import time
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 from dataloader import SkinLesionLoader
-from model import UNet2
+from model import UNet2, EncDec, EncDec2
 from training_func import train_with_validation
-from loss_functions import bce_loss, dice_coefficient, intersection_over_union, accuracy, sensitivity, specificity, evaluate_model_with_metric, evaluate_model
-
+from loss_functions import bce_loss, evaluate_model, dice_loss, focal_loss
+#from loss_functions import dice_coefficient, intersection_over_union, accuracy, sensitivity, specificity, evaluate_model_with_metric
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -45,11 +45,19 @@ print(f"Validation samples: {len(val_dataset)}")
 print(f"Testing samples: {len(test_dataset)}")
 
 
-model = UNet2().to(device)
+#model = UNet2().to(device)
+model = EncDec2().to(device)
 summary(model, (3, 256, 256))
 
-train_with_validation(device, model, optim.Adam(model.parameters()), bce_loss, 20, train_loader, val_loader, test_loader)
 
+# Define a weight for the positive class (e.g., 2.0 for imbalance)
+pos_weight = torch.tensor([2.0]).to(device)  # Adjust based on your dataset
+
+# Instantiate the loss function
+#BCE_logits = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+
+#train_with_validation(device, model, optim.Adam(model.parameters()), bce_loss, 20, train_loader, val_loader, test_loader)
+train_with_validation(device, model, optim.Adam(model.parameters()), dice_loss, 20, train_loader, val_loader, test_loader)
 #do evaluate model performace on loss functios
 
 #avg_dice = evaluate_model_with_metric(model, device, test_loader, dice_coefficient)
