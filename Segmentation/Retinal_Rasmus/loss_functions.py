@@ -263,3 +263,23 @@ def evaluate_model(model, dataloader, device):
     }
     
     return avg_metrics
+
+
+def binary_focal_loss(inputs, targets, alpha=0.25, gamma=2.0, reduction='mean'):
+
+    probs = torch.sigmoid(inputs)
+
+
+    bce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+
+
+    pt = torch.where(targets == 1, probs, 1 - probs)  # p if y=1, 1-p otherwise
+    focal_loss = alpha * (1 - pt) ** gamma * bce_loss
+
+
+    if reduction == 'mean':
+        return focal_loss.mean()
+    elif reduction == 'sum':
+        return focal_loss.sum()
+    else:
+        return focal_loss 

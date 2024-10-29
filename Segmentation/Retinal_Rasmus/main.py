@@ -19,7 +19,7 @@ from IPython.display import clear_output
 from retinal_loaders import PATCH_DRIVEDataLoader
 from model import UNet2, UNet3,UNet2Dilated, EncDec
 from training_func import train_with_validation
-from loss_functions import evaluate_model,dice_loss,focal_loss, bce_loss, dice_coefficient, intersection_over_union, accuracy, sensitivity, specificity, evaluate_model_with_metric
+from loss_functions import binary_focal_loss, evaluate_model,dice_loss,focal_loss, bce_loss, dice_coefficient, intersection_over_union, accuracy, sensitivity, specificity, evaluate_model_with_metric
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -52,19 +52,19 @@ print(f"Validation samples: {len(val_dataset)}")
 print(f"Testing samples: {len(test_dataset)}")
 
 
-model = UNet2(128).to(device)
+model = UNet2(64).to(device)
 # summary(model, (3, 512, 512))
 
 weights = torch.tensor([1.0]).to(device)
 
-
+loss_function = binary_focal_loss
 train_with_validation(
     device, 
     model, 
     optim.Adam(model.parameters(),
                weight_decay=1e-4),
-    dice_loss, 
-    100, 
+    loss_function, 
+    20, 
     train_loader, 
     val_loader, 
     test_loader,

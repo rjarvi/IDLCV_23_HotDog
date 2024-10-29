@@ -13,7 +13,7 @@
 
 
 ### how many gpus
-#BSUB -gpu "num=1:mode=exclusive_process"
+#BSUB -gpu "num=1"
 
 
 ### running time 
