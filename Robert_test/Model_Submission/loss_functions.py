@@ -220,4 +220,50 @@ def evaluate_model(model, dataloader, device):
     return avg_metrics
 
 
+def evaluate_model_retinal(model, dataloader, device):
+    # Put model in evaluation mode
+    model.eval()
+    
+    # Initialize lists to store metrics for each batch
+    dice_scores = []
+    iou_scores = []
+    accuracy_scores = []
+    sensitivity_scores = []
+    specificity_scores = []
+    
+    # Disable gradient computation for evaluation
+    with torch.no_grad():
+        for batch in dataloader:
+            # Assuming each batch has images and masks
+            images = batch['image']
+            masks = batch['vessel_mask']
+            images, masks = images.to(device), masks.to(device)
+            
+            # Forward pass to get predictions
+            outputs = model(images)
+            
+            # Convert outputs to probabilities if necessary
+            y_pred = torch.sigmoid(outputs)  # Assuming binary segmentation
+            
+            # Calculate metrics for this batch
+            metrics = calculate_segmentation_metrics(masks, y_pred, device)
+            
+            # Append each metric
+            dice_scores.append(metrics['Dice'].item())
+            iou_scores.append(metrics['IoU'].item())
+            accuracy_scores.append(metrics['Accuracy'].item())
+            sensitivity_scores.append(metrics['Sensitivity'].item())
+            specificity_scores.append(metrics['Specificity'].item())
+    
+    # Compute average for each metric
+    avg_metrics = {
+        'Dice': sum(dice_scores) / len(dice_scores),
+        'IoU': sum(iou_scores) / len(iou_scores),
+        'Accuracy': sum(accuracy_scores) / len(accuracy_scores),
+        'Sensitivity': sum(sensitivity_scores) / len(sensitivity_scores),
+        'Specificity': sum(specificity_scores) / len(specificity_scores)
+    }
+    
+    return avg_metrics
+
 #loss function for abalation study
