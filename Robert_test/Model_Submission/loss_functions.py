@@ -4,11 +4,24 @@ import torch.nn.functional as F
 
 from torchmetrics import Dice, JaccardIndex, Accuracy, Recall, Specificity
 
+from torchvision.ops import sigmoid_focal_loss
+
 #  Dice overlap, Intersection overUnion, Accuracy, Sensitivity, and Specifici
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def bce_loss(y_real, y_pred):
     return torch.mean(y_pred - y_real*y_pred + torch.log(1 + torch.exp(-y_pred)))
+
+def bce_pos(y_real, y_pred):
+    # Ensure class_weights are on the same device as inputs
+    device = y_real.device
+    class_weights = torch.tensor([1.0, 2.0], device=device)  # Assign more weight to the positive class
+
+    # Initialize the loss function
+    bce_func = torch.nn.CrossEntropyLoss(weight=class_weights)
+
+    # Since y_pred should be logits, no sigmoid should be applied here
+    return bce_func(y_pred, y_real)
 
 # def dice_loss(y_true, y_pred):
 #     smooth = 1e-6  # To avoid division by zero
@@ -44,24 +57,31 @@ def dice_loss(y_real, y_pred, epsilon=1e-6):
     dice_loss = 1. - dice_coeff
     return dice_loss.mean()
 
-def focal_loss(y_real, y_pred,gamma = 2):
-    y_pred_sig = torch.sigmoid(y_pred)
-    term = (1-y_pred_sig)*gamma * y_real * torch.log(y_pred_sig) + (1-y_real) * torch.log(1-y_pred_sig)
-    return (-term.sum()) 
+# def focal_loss(y_real, y_pred,gamma = 2):
+#     y_pred_sig = torch.sigmoid(y_pred)
+#     term = (1-y_pred_sig)*gamma * y_real * torch.log(y_pred_sig) + (1-y_real) * torch.log(1-y_pred_sig)
+#     return (-term.sum()) 
 
+import torch
+import torch.nn.functional as F
+#BELOW IS FINAL
+def focal_loss(y_real, y_pred):
+    return sigmoid_focal_loss(y_pred, y_real, 0.4, 2.5).mean()
 
+# def binary_focal_loss(inputs, targets, alpha=0.5, gamma=1.0, reduction='mean'):
 
+#     probs = torch.sigmoid(inputs)
+#     bce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
 
-# def dice_coefficient(y_pred, y_true, epsilon=1e-07):
-#     y_pred_copy = prediction.clone()
+#     pt = torch.where(targets == 1, probs, 1 - probs)  # p if y=1, 1-p otherwise
+#     focal_loss = alpha * (1 - pt) ** gamma * bce_loss
 
-#     y_pred_copy[prediction_copy < 0] = 0
-#     y_pred_copy[prediction_copy > 0] = 1
-
-#     intersection = abs(torch.sum(y_pred_copy * y_true))
-#     union = abs(torch.sum(y_pred_copy) + torch.sum(y_true))
-#     dice = (2. * intersection + epsilon) / (union + epsilon)
-#     return dice
+#     if reduction == 'mean':
+#         return focal_loss.mean()
+#     elif reduction == 'sum':
+#         return focal_loss.sum()
+#     else:
+#         return focal_loss
 
 # Intersection overUnion
 

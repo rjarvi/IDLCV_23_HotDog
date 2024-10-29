@@ -19,8 +19,10 @@ from IPython.display import clear_output
 from dataloader import SkinLesionLoader
 from model import UNet2, EncDec, EncDec2
 from training_func import train_with_validation
-from loss_functions import bce_loss, evaluate_model, dice_loss, focal_loss
+from loss_functions import bce_loss, evaluate_model, dice_loss, focal_loss, bce_pos
 #from loss_functions import dice_coefficient, intersection_over_union, accuracy, sensitivity, specificity, evaluate_model_with_metric
+
+#from torchvision.ops import sigmoid_focal_loss
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
@@ -44,20 +46,62 @@ print(f"Training samples: {len(train_dataset)}")
 print(f"Validation samples: {len(val_dataset)}")
 print(f"Testing samples: {len(test_dataset)}")
 
+# Access the item manually
+image, label = train_dataset[0]
 
-#model = UNet2().to(device)
-model = EncDec2().to(device)
-summary(model, (3, 256, 256))
+# Print the shape of the transformed image
+print(f"Transformed Image Shape: {image.shape}")  # Usually [C, H, W]
+
+# Print the shape of the transformed label
+print(f"Transformed Label Shape: {label.shape}")
 
 
-# Define a weight for the positive class (e.g., 2.0 for imbalance)
-pos_weight = torch.tensor([2.0]).to(device)  # Adjust based on your dataset
+# model = UNet2().to(device)
+# #model = EncDec2().to(device)
+# # summary(model, (3, 256, 256))
 
-# Instantiate the loss function
-#BCE_logits = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+model = UNet2().to(device)
+# #model = EncDec2().to(device)
 
-#train_with_validation(device, model, optim.Adam(model.parameters()), bce_loss, 20, train_loader, val_loader, test_loader)
-train_with_validation(device, model, optim.Adam(model.parameters()), dice_loss, 20, train_loader, val_loader, test_loader)
+
+
+
+train_with_validation(device, model, optim.Adam(model.parameters()), bce_pos, 20, train_loader, val_loader, test_loader)
+
+print("Final Model Performance")
+metrics = evaluate_model(model, test_loader, device)
+for metric_name, metric_value in metrics.items():
+        print(f"{metric_name}: {metric_value:.4f}")  # Format to 4 decimal places
+
+
+
+# loss_funcs = [bce_loss, dice_loss, focal_loss, bce_pos]
+
+# for loss_func in loss_funcs:
+#     print(f"Using loss function with UNet: {loss_func.__name__}")
+#     model = UNet2().to(device)
+#     train_with_validation(device, model, optim.Adam(model.parameters()), focal_loss, 20, train_loader, val_loader, test_loader)
+#     print("Final Model Performance")
+#     metrics = evaluate_model(model, test_loader, device)
+#     for metric_name, metric_value in metrics.items():
+#             print(f"{metric_name}: {metric_value:.4f}")  # Format to 4 decimal places
+
+
+#     print(f"Using loss function with EncDec: {loss_func.__name__}")
+#     model = EncDec2().to(device)
+#     train_with_validation(device, model, optim.Adam(model.parameters()), focal_loss, 20, train_loader, val_loader, test_loader)
+#     print("Final Model Performance")
+#     metrics = evaluate_model(model, test_loader, device)
+#     for metric_name, metric_value in metrics.items():
+#             print(f"{metric_name}: {metric_value:.4f}")  # Format to 4 decimal places
+
+
+
+
+
+
+
+
 #do evaluate model performace on loss functios
 
 #avg_dice = evaluate_model_with_metric(model, device, test_loader, dice_coefficient)
@@ -70,8 +114,3 @@ train_with_validation(device, model, optim.Adam(model.parameters()), dice_loss, 
 # print(f'Final Model Performance - Sensitivity Metric: {sensitivity_:.4f}')
 # specificity_ = evaluate_model_with_metric(model, device, test_loader, specificity)
 # print(f'Final Model Performance - Specificity Metric: {specificity_:.4f}')
-
-print("Final Model Performance")
-metrics = evaluate_model(model, test_loader, device)
-for metric_name, metric_value in metrics.items():
-        print(f"{metric_name}: {metric_value:.4f}")  # Format to 4 decimal places
