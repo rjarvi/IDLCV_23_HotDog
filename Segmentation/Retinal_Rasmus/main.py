@@ -63,7 +63,7 @@ train_with_validation(
     model, 
     optim.Adam(model.parameters(),
                weight_decay=1e-4),
-    dice_loss, 
+    focal_loss, 
     100, 
     train_loader, 
     val_loader, 

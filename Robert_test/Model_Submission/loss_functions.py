@@ -221,3 +221,7 @@ def evaluate_model(model, dataloader, device):
 
 
 #loss function for abalation study
+
+
+def focal_loss(y_real, y_pred):
+    return sigmoid_focal_loss(y_pred, y_real, 0.4, 2.5).mean()
